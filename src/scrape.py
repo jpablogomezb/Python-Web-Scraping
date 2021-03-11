@@ -212,7 +212,7 @@ def parse_blog_post(path, url):
 	lookup_response = fetch_url(lookup_url)
 	if lookup_response.status_code in range(200, 299):
 		lookup_soup = get_html_soup(lookup_response.text)
-		#a function targeting a more specific html tag/class can be used instead for this no iterative case
+		#a function targeting a more specific html tag/class can be used instead in this case
 		lookup_html_soup = get_content_data(lookup_soup, lookup_url)
 		words = lookup_html_soup.text.split()
 		clean_words = clean_up_words(words)

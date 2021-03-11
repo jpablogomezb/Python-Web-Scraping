@@ -46,19 +46,19 @@ def clean_word(word):
 	word = word.replace("--", " ")
 	word = word.replace("—", " ")
 	word = word.replace("it’s", " ")
+	word = word.strip()
 	word = word.strip('#')
 	word = word.strip('«')
 	word = word.strip('»')
-	word = word.replace("geografía ", "geografía")
-	word = word.replace("geográfica ", "geográfica")
 	return word
 
 def clean_up_words(words):
 	new_words = []
-	pkg_stop_words = get_stop_words('es') #language: en, es
-	my_stop_words = [" ", 'reply', 'like', 'says', 'comments', "i'm", "it's", "you're", "we're" '|', "don't", 'comment',
+	pkg_stop_words = get_stop_words('en') #language: en, es
+	my_stop_words = [" ", 'reply', 'like', 'share', 'tweet','says', 'comments', "i'm", "it's", "you're", "we're" '|', "don't", 'comment', 'buy', 
+					 'contact', 'open', 'google', 'maps' , 'positive', 'feedback', 'email',
 					'hi', '-', 'etc', 'twitter', 'libro', 'libros', 'tig', 'página', 'páginas', 'páginas ', 'anterior', 'siguiente', 
-					'ficha', 'empty', 'tweet', 'nº', '2021', '2020', '2019', '2018',  '2017', '2016',
+					'ficha', 'empty', 'nº', '2021', '2020', '2019', '2018',  '2017', '2016',
 					 '2015', '2014',  '2013', '2012',  '2011', '2010', 'octubre', '16', 'gratis', 'correo', 'electrónico', 'nosolosig',
 					 'autor/a', 'editorial', 'país', 'fecha', 'edición', 'precio', 'isbn', 'idioma',
 					 'autor/a ', 'editorial ', 'país ', 'fecha ', 'edición ', 'precio ', 'isbn ', 'idioma ', 'euros', 'español', 'españa']
@@ -133,12 +133,14 @@ def get_url_lookup_class(url):
 
 def get_content_data(soup, url):
 	'''
-	Get content from a html tag and class
+	Get all html content within the specific tag and class (as "content filters")
+	if it is a saved domain, if not get content from the body html tag.
 	'''
-	lookup_dict = get_url_lookup_class(url)
+	lookup_dict = get_url_lookup_class(url) 
 	if lookup_dict is None or "tag" not in lookup_dict:
 		return soup.find("body")
-	return soup.find(lookup_dict['tag'], {'class': lookup_dict['class']})
+	soup_data = soup.find(lookup_dict['tag'], {'class': lookup_dict['class']})
+	return soup_data
 	
 def parse_links(soup):
 	links = []
@@ -210,6 +212,7 @@ def parse_blog_post(path, url):
 	lookup_response = fetch_url(lookup_url)
 	if lookup_response.status_code in range(200, 299):
 		lookup_soup = get_html_soup(lookup_response.text)
+		#a function targeting a more specific html tag/class can be used instead for this no iterative case
 		lookup_html_soup = get_content_data(lookup_soup, lookup_url)
 		words = lookup_html_soup.text.split()
 		clean_words = clean_up_words(words)
@@ -289,7 +292,7 @@ def fetch_links_words(url):
 	words 					= []
 	if html_soup:
 		words 				= html_soup.text.split()
-	clean_words 			= clean_up_words(words)
+		clean_words 		= clean_up_words(words)
 	return set(to_scrape), clean_words
 
 def scrape_links(to_scrape, scrapped, current_depth=0, max_depth=3, words=[]):
@@ -307,10 +310,12 @@ def scrape_links(to_scrape, scrapped, current_depth=0, max_depth=3, words=[]):
 	return scrapped, words
 
 def main_with_depth():
+	#initialize
 	url 								= 'https://www.nosolosig.com/libros-geo' #'https://tim.blog' #get_input()
 	to_scrape_a, new_words 				= fetch_links_words(url)
 	scrapped_a 							= set([url])
-	final_scrapped_items, final_words	= scrape_links(to_scrape_a, scrapped_a, current_depth=0, max_depth=3, words=new_words)
+	final_scrapped_items, final_words	= scrape_links(to_scrape_a, scrapped_a, current_depth=0, max_depth=1, words=new_words)
+	#save data
 	save_words 							= save_final_words(url, final_words)
 	save_links 							= save_links_scraped(url, final_scrapped_items)
 	#print(Counter(final_words).most_common(30))
